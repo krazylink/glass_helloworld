@@ -18,6 +18,7 @@ class OAuthBaseRequestHandler(webapp2.RequestHandler):
   def create_oauth_flow(self):
     flow = flow_from_clientsecrets('client_secrets.json', scope=SCOPES)
     parsed_url = urlparse(self.request.url)
+    'This line is to make switching between local and prodction environments transparent'
     flow.redirect_uri = '%s://%s/oauth2callback' % (parsed_url.scheme, parsed_url.netloc)
     return flow
 
@@ -26,13 +27,16 @@ class OAuthCodeRequestHandler(OAuthBaseRequestHandler):
 """ handler for step1 of getting oauth creds """
   def get(self):
     flow = self.create_oauth_flow()
-    'This line is to make switching between local and prodction environments transparent'
     url = flow.step1_get_authorize_url(redirect_uri=flow.redirect_uri)
     self.redirect(str(url))
 
 
 class OAuthExchangeRequestHandler(OAuthBaseRequestHandler):
-
+""" 
+Handler for step2 of getting oauth creds
+Uses the returned oauth code to issue credentials,
+then stores the credentials in the app engine datastore
+"""
   def get(self):
     code = self.request.get('code')
     if not code:
